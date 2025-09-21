@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VOIDSTEEL - Five creators. Infinite possibilities.</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --cyan: #00ffff;
+            --magenta: #ff00ff;
+            --dark-bg: #0a0a0a;
+            --card-bg: rgba(20, 20, 20, 0.8);
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0a0;
+        }
+        
+        body {
+            font-family: 'Orbitron', monospace;
+            background: var(--dark-bg);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            position: relative;
+        }
+        
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.5);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, var(--cyan), var(--magenta));
+            border-radius: 4px;
+        }
+        
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(10, 10, 10, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 20px 50px;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(0, 255, 255, 0.1);
+            animation: slideDown 0.5s ease-out;
+        }
+        
+        @keyframes slideDown {
+            from {
+                transform: translateY(-100%);
+            }
+            to {
+                transform: translateY(0);
+            }
+        }
+        
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .nav-logo {
+            font-size: 1.5rem;
+            font-weight: 900;
+            background: linear-gradient(45deg, var(--cyan), var(--magenta));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 40px;
+        }
+        
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 400;
+            transition: all 0.3s ease;
+            position: relative;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--cyan), var(--magenta));
+            transition: width 0.3s ease;
+        }
+        
+        .nav-links a:hover {
+            color: var(--cyan);
+        }
+        
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+        
+        /* Hero Section */
+        .hero {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            background: radial-gradient(ellipse at center, rgba(0, 255, 255, 0.02) 0%, transparent 60%);
+        }
+        
+        .particles {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: var(--cyan);
+            border-radius: 50%;
+            opacity: 0;
+            animation: float 20s infinite linear;
+        }
+        
+        .particle:nth-child(odd) {
+            background: var(--magenta);
+        }
+        
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) translateX(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.5;
+            }
+            90% {
+                opacity: 0.5;
+            }
+            100% {
+                transform: translateY(-100vh) translateX(100px);
+                opacity: 0;
+            }
+        }
+        
+        .hero-content {
+            text-align: center;
+            z-index: 10;
+            position: relative;
+            animation: fadeInUp 1s ease-out;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .logo {
+            font-size: 5rem;
+            font-weight: 900;
+            letter-spacing: 0.2em;
+            margin-bottom: 20px;
+            background: linear-gradient(45deg, var(--cyan), var(--magenta), var(--cyan));
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradient 3s ease infinite;
+            text-shadow: 0 0 50px rgba(0, 255, 255, 0.5);
+        }
+        
+        @keyframes gradient {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+        
+        .tagline {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            letter-spacing: 0.1em;
+            margin-top: 20px;
+            opacity: 0;
+            animation: fadeIn 1s ease-out 0.5s forwards;
+        }
+        
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+            }
+        }
+        
+        /* Glowing lines */
+        .glow-lines {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            opacity: 0.3;
+        }
+        
+        .glow-line {
+            position: absolute;
+            height: 1px;
+            width: 200px;
+            background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+            animation: slide 10s infinite linear;
+        }
+        
+        .glow-line:nth-child(2) {
+            top: 30%;
+            animation-delay: 2s;
+            background: linear-gradient(90deg, transparent, var(--magenta), transparent);
+        }
+        
+        .glow-line:nth-child(3) {
+            top: 60%;
+            animation-delay: 4s;
+        }
+        
+        @keyframes slide {
+            0% {
+                left: -200px;
+            }
+            100% {
+                left: 100%;
+            }
+        }
+        
+        /* Sections */
+        section {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 100px 50px;
+            opacity: 0;
+            animation: fadeInSection 0.8s ease-out forwards;
+        }
+        
+        @keyframes fadeInSection {
+            to {
+                opacity: 1;
+            }
+        }
+        
+        h2 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 50px;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+        
+        h2::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 2px;
+            background: linear-gradient(90deg, var(--cyan), var(--magenta));
+        }
+        
+        /* Projects Grid */
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 50px;
+        }
+        
+        .project-card {
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+        }
+        
+        .project-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, transparent, rgba(0, 255, 255, 0.1), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .project-card:hover {
+            transform: translateY(-5px);
+            border: 1px solid transparent;
+            background: linear-gradient(135deg, var(--card-bg), var(--card-bg)) padding-box,
+                        linear-gradient(135deg, var(--cyan), var(--magenta)) border-box;
+        }
+        
+        .project-card:hover::before {
+            opacity: 1;
+        }
+        
+        .project-name {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: var(--text-primary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .project-description {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            font-weight: 400;
+        }
+        
+        /* Members Grid */
+        .members-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            margin-top: 50px;
+        }
+        
+        .member-card {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .member-card::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--cyan), var(--magenta));
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+        
+        .member-card:hover {
+            transform: translateY(-3px);
+            background: rgba(30, 30, 30, 0.8);
+        }
+        
+        .member-card:hover::after {
+            transform: scaleX(1);
+        }
+        
+        .member-name {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .member-role {
+            font-size: 0.9rem;
+            color: var(--cyan);
+            font-weight: 400;
+        }
+        
+        /* About Section */
+        .about-content {
+            max-width: 800px;
+            margin: 50px auto 0;
+            text-align: center;
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+        
+        /* Footer */
+        footer {
+            background: rgba(5, 5, 5, 0.9);
+            padding: 30px 50px;
+            text-align: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .footer-text {
+            font-size: 0.8rem;
+            color: rgba(160, 160, 160, 0.5);
+            letter-spacing: 0.05em;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            nav {
+                padding: 15px 20px;
+            }
+            
+            .nav-links {
+                gap: 20px;
+            }
+            
+            .nav-links a {
+                font-size: 0.8rem;
+            }
+            
+            .logo {
+                font-size: 3rem;
+            }
+            
+            .tagline {
+                font-size: 0.9rem;
+            }
+            
+            section {
+                padding: 60px 20px;
+            }
+            
+            h2 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-container">
+            <div class="nav-logo">VS</div>
+            <div class="nav-links">
+                <a href="#projects">Projects</a>
+                <a href="#members">Members</a>
+                <a href="#about">About</a>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="particles">
+            <div class="particle" style="left: 10%; animation-delay: 0s;"></div>
+            <div class="particle" style="left: 20%; animation-delay: 2s;"></div>
+            <div class="particle" style="left: 30%; animation-delay: 4s;"></div>
+            <div class="particle" style="left: 40%; animation-delay: 6s;"></div>
+            <div class="particle" style="left: 50%; animation-delay: 8s;"></div>
+            <div class="particle" style="left: 60%; animation-delay: 10s;"></div>
+            <div class="particle" style="left: 70%; animation-delay: 12s;"></div>
+            <div class="particle" style="left: 80%; animation-delay: 14s;"></div>
+            <div class="particle" style="left: 90%; animation-delay: 16s;"></div>
+        </div>
+        <div class="glow-lines">
+            <div class="glow-line" style="top: 20%;"></div>
+            <div class="glow-line"></div>
+            <div class="glow-line"></div>
+        </div>
+        <div class="hero-content">
+            <h1 class="logo">VOIDSTEEL</h1>
+            <p class="tagline">Five creators. Infinite possibilities. Explore the projects within the Void.</p>
+        </div>
+    </section>
+    
+    <!-- Projects Section -->
+    <section id="projects">
+        <h2>Projects</h2>
+        <div class="projects-grid">
+            <div class="project-card">
+                <h3 class="project-name">Void Engine</h3>
+                <p class="project-description">Next-generation rendering engine built for the metaverse. Pushing the boundaries of real-time graphics and immersive experiences.</p>
+            </div>
+            <div class="project-card">
+                <h3 class="project-name">Ember Protocol</h3>
+                <p class="project-description">Decentralized communication network with quantum encryption. Ensuring privacy in an interconnected digital world.</p>
+            </div>
+            <div class="project-card">
+                <h3 class="project-name">Neural Mesh</h3>
+                <p class="project-description">AI-powered collaborative framework for distributed computing. Harnessing collective intelligence for breakthrough solutions.</p>
+            </div>
+            <div class="project-card">
+                <h3 class="project-name">Nexus Core</h3>
+                <p class="project-description">Universal API gateway for seamless integration across platforms. Breaking down barriers between digital ecosystems.</p>
+            </div>
+            <div class="project-card">
+                <h3 class="project-name">Phantom OS</h3>
+                <p class="project-description">Lightweight, secure operating system for edge devices. Built from the ground up for the future of computing.</p>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Members Section -->
+    <section id="members">
+        <h2>Members</h2>
+        <div class="members-grid">
+            <div class="member-card">
+                <h3 class="member-name">Cipher</h3>
+                <p class="member-role">Systems Architect</p>
+            </div>
+            <div class="member-card">
+                <h3 class="member-name">Nova</h3>
+                <p class="member-role">AI Researcher</p>
+            </div>
+            <div class="member-card">
+                <h3 class="member-name">Echo</h3>
+                <p class="member-role">Network Engineer</p>
+            </div>
+            <div class="member-card">
+                <h3 class="member-name">Flux</h3>
+                <p class="member-role">Creative Director</p>
+            </div>
+            <div class="member-card">
+                <h3 class="member-name">Nexus</h3>
+                <p class="member-role">Lead Developer</p>
+            </div>
+        </div>
+    </section>
+    
+    <!-- About Section -->
+    <section id="about">
+        <h2>About</h2>
+        <div class="about-content">
+            <p>VOIDSTEEL is a nexus of creativity and power, where five visionary minds converge to forge the future. Born from the digital underground, we are architects of tomorrow's reality. Our projects push the boundaries of what's possible, creating technologies that bridge the gap between imagination and implementation. In the void, we find infinite potential. In steel, we find unbreakable resolve.</p>
+        </div>
+    </section>
+    
+    <!-- Footer -->
+    <footer>
+        <p class="footer-text">© 2024 VOIDSTEEL. Forged in the digital void.</p>
+    </footer>
+    
+    <script>
+        // Smooth scrolling for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+        
+        // Intersection Observer for fade-in animations
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -100px 0px'
+        };
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.animationPlayState = 'running';
+                }
+            });
+        }, observerOptions);
+        
+        // Observe all sections
+        document.querySelectorAll('section:not(.hero)').forEach(section => {
+            section.style.animationPlayState = 'paused';
+            observer.observe(section);
+        });
+        
+        // Add dynamic glow effect on mouse move
+        document.addEventListener('mousemove', (e) => {
+            const x = e.clientX / window.innerWidth;
+            const y = e.clientY / window.innerHeight;
+            
+            document.documentElement.style.setProperty('--mouse-x', x);
+            document.documentElement.style.setProperty('--mouse-y', y);
+        });
+    </script>
+</body>
+</html>
