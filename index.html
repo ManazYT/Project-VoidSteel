@@ -1,0 +1,1525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VoidSteel Command Interface</title>
+    <style>
+        /* --- CORE STYLES & BACKGROUND --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            overflow: hidden;
+            background: radial-gradient(ellipse at center, #0a0a15 0%, #000000 100%);
+            font-family: 'Consolas', 'Courier New', monospace;
+            height: 100vh;
+            position: relative;
+            color: #ffffff;
+            cursor: crosshair;
+        }
+
+        /* --- CANVAS & STARFIELD --- */
+        #starfield-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+
+        #canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* --- MAIN UI CONTAINER --- */
+        .main-ui {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        /* --- HUD CORNERS --- */
+        .hud-corner {
+            position: fixed;
+            width: 80px;
+            height: 80px;
+            border: 2px solid rgba(138, 43, 226, 0.4);
+            z-index: 12;
+            transition: all 0.3s ease;
+        }
+
+        .hud-corner:hover {
+            border-color: rgba(138, 43, 226, 0.8);
+            box-shadow: 0 0 20px rgba(138, 43, 226, 0.5);
+        }
+
+        .hud-corner.top-left { top: 20px; left: 20px; border-right: none; border-bottom: none; }
+        .hud-corner.top-right { top: 20px; right: 20px; border-left: none; border-bottom: none; }
+        .hud-corner.bottom-left { bottom: 20px; left: 20px; border-right: none; border-top: none; }
+        .hud-corner.bottom-right { bottom: 20px; right: 20px; border-left: none; border-top: none; }
+
+        /* --- TOP BAR UI --- */
+        .top-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 80px;
+            background: linear-gradient(180deg, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.4) 100%);
+            border-bottom: 2px solid rgba(138, 43, 226, 0.6);
+            box-shadow: 0 2px 20px rgba(138, 43, 226, 0.3);
+            z-index: 15;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 40px;
+            pointer-events: auto;
+            backdrop-filter: blur(10px);
+        }
+
+        .logo-top {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        /* VOIDSTEEL LOGO (Small Top) */
+        .voidsteel-icon {
+            width: 40px;
+            height: 40px;
+            position: relative;
+            filter: drop-shadow(0 0 8px rgba(138, 43, 226, 0.8));
+        }
+
+        .v-outer {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-top: 35px solid #8a2be2;
+            clip-path: polygon(0 0, 100% 0, 85% 85%, 15% 85%);
+        }
+
+        .v-inner {
+            position: absolute;
+            top: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-top: 25px solid #ffffff;
+            clip-path: polygon(0 0, 100% 0, 80% 80%, 20% 80%);
+        }
+
+        .v-accent {
+            position: absolute;
+            top: 2px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-top: 12px solid #00ffff;
+        }
+
+        .logo-text-small {
+            font-size: 24px;
+            font-weight: 900;
+            letter-spacing: 3px;
+            color: #ffffff;
+            text-shadow: 0 0 10px rgba(138, 43, 226, 0.8);
+            animation: text-glow 3s ease-in-out infinite alternate;
+        }
+
+        .system-info {
+            display: flex;
+            gap: 30px;
+            align-items: center;
+            font-size: 12px;
+            color: #8a2be2;
+        }
+
+        .datetime-display {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 2px;
+        }
+
+        .system-time {
+            font-size: 18px;
+            color: #00ffff;
+            font-weight: bold;
+            text-shadow: 0 0 8px rgba(0, 255, 255, 0.6);
+            animation: time-pulse 2s ease-in-out infinite;
+        }
+
+        .system-date {
+            font-size: 12px;
+            color: #8a2be2;
+            text-transform: uppercase;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .status-indicator:hover {
+            transform: scale(1.1);
+            filter: brightness(1.3);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ff0066;
+            animation: pulse-dot 2s ease-in-out infinite;
+            box-shadow: 0 0 10px currentColor;
+        }
+
+        .status-dot.online { background: #00ff41; }
+        .status-dot.warning { background: #ffaa00; }
+        .status-dot.critical { background: #ff0066; animation-duration: 0.5s; }
+
+        /* --- CENTRAL VOID CORE --- */
+        .void-core-container {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 5;
+            cursor: pointer;
+        }
+
+        #celestial-body {
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #1a0033 0%, #0d001a 50%, #000000 100%);
+            box-shadow: 
+                0 0 150px rgba(138, 43, 226, 0.8),
+                0 0 300px rgba(138, 43, 226, 0.4),
+                inset 0 0 60px rgba(0,0,0,0.9);
+            animation: celestial-glow 6s ease-in-out infinite alternate;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        #celestial-body:hover {
+            transform: scale(1.05);
+            box-shadow: 
+                0 0 200px rgba(138, 43, 226, 1),
+                0 0 400px rgba(138, 43, 226, 0.6),
+                inset 0 0 80px rgba(0,0,0,0.95);
+        }
+
+        /* Central VoidSteel Logo (for Visualizer) */
+        .voidsteel-logo-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 60px;
+            filter: drop-shadow(0 0 10px rgba(0, 255, 255, 0.8));
+            opacity: 0.7;
+            z-index: 10;
+        }
+        .v-outer-center {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 30px solid transparent;
+            border-right: 30px solid transparent;
+            border-top: 50px solid #8a2be2;
+            clip-path: polygon(0 0, 100% 0, 85% 85%, 15% 85%);
+        }
+        .v-inner-center {
+            position: absolute;
+            top: 7px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 23px solid transparent;
+            border-right: 23px solid transparent;
+            border-top: 38px solid #ffffff;
+            clip-path: polygon(0 0, 100% 0, 80% 80%, 20% 80%);
+        }
+        .v-accent-center {
+            position: absolute;
+            top: 4px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 12px solid transparent;
+            border-right: 12px solid transparent;
+            border-top: 18px solid #00ffff;
+        }
+
+        /* ACCRETION DISK (Flares) */
+        #accretion-disk-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 700px;
+            height: 250px;
+            perspective: 800px;
+            transform-style: preserve-3d;
+        }
+
+        .accretion-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            border-radius: 50%;
+            border: 2px solid;
+            opacity: 0.7;
+            transform: translate(-50%, -50%) rotateX(75deg);
+            filter: blur(0.5px);
+            transition: transform 0.05s linear, box-shadow 0.05s linear;
+        }
+
+        .accretion-ring:nth-child(1) {
+            width: 320px; height: 100px;
+            border-color: rgba(138, 43, 226, 0.9);
+            box-shadow: 0 0 20px rgba(138, 43, 226, 0.6);
+        }
+        .accretion-ring:nth-child(2) {
+            width: 450px; height: 140px;
+            border-color: rgba(255, 0, 255, 0.7);
+            box-shadow: 0 0 15px rgba(255, 0, 255, 0.4);
+        }
+        .accretion-ring:nth-child(3) {
+            width: 580px; height: 180px;
+            border-color: rgba(138, 43, 226, 0.5);
+            box-shadow: 0 0 10px rgba(138, 43, 226, 0.3);
+        }
+
+        /* --- SIDE PANELS (Metrics & Browser) --- */
+        .side-panel {
+            position: fixed;
+            top: 80px;
+            width: 320px;
+            height: calc(100vh - 160px);
+            background: linear-gradient(180deg, rgba(10, 10, 30, 0.95) 0%, rgba(5, 5, 15, 0.95) 100%);
+            border: 1px solid rgba(138, 43, 226, 0.4);
+            backdrop-filter: blur(15px);
+            padding: 20px;
+            pointer-events: auto;
+            border-radius: 8px;
+            box-shadow: 0 0 30px rgba(138, 43, 226, 0.2);
+            transition: all 0.3s ease;
+            display: flex; 
+            flex-direction: column; 
+        }
+
+        .side-panel:hover {
+            border-color: rgba(138, 43, 226, 0.7);
+            box-shadow: 0 0 40px rgba(138, 43, 226, 0.4);
+        }
+
+        .side-panel.left { left: 20px; }
+        .side-panel.right { right: 20px; }
+
+        .panel-title {
+            font-size: 16px;
+            color: #8a2be2;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(138, 43, 226, 0.3);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .panel-title:hover {
+            color: #ffffff;
+            text-shadow: 0 0 10px rgba(138, 43, 226, 0.8);
+        }
+
+        /* Browser Input & Frame */
+        .browser-input-container {
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+        }
+
+        #browser-url-input {
+            width: 100%;
+            background: transparent;
+            border: none;
+            color: #00ffff;
+            font-family: 'Consolas', monospace;
+            font-size: 13px;
+            outline: none;
+            caret-color: #8a2be2;
+            padding: 5px 0;
+            border-bottom: 1px dashed rgba(138, 43, 226, 0.5);
+        }
+        
+        .voidsteel-browser-frame {
+            flex-grow: 1; /* Take up remaining space */
+            width: 100%;
+            border: 2px solid rgba(138, 43, 226, 0.6);
+            border-radius: 6px;
+            background-color: rgba(0, 0, 0, 0.8);
+        }
+
+        /* SYSTEM METRIC STYLES */
+        .system-metric {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 15px 0;
+            font-size: 12px;
+            padding: 8px;
+            background: rgba(138, 43, 226, 0.05);
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .system-metric:hover {
+            background: rgba(138, 43, 226, 0.15);
+            transform: translateX(5px);
+        }
+
+        .metric-label {
+            color: #8a2be2;
+            flex: 1;
+        }
+
+        .metric-value {
+            color: #ffffff;
+            font-weight: bold;
+            min-width: 80px;
+            text-align: right;
+            transition: color 0.3s ease;
+        }
+
+        .metric-value.critical { color: #ff0066; }
+        .metric-value.warning { color: #ffaa00; }
+        .metric-value.good { color: #00ff41; }
+
+        .metric-bar {
+            width: 80px;
+            height: 6px;
+            background: rgba(138, 43, 226, 0.2);
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 0 10px;
+            position: relative;
+        }
+
+        .metric-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #8a2be2, #ff0066);
+            transition: all 0.5s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            animation: metric-shine 3s ease-in-out infinite;
+        }
+
+        /* --- BOTTOM BAR & MAIN LOGO --- */
+        .bottom-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 80px;
+            background: linear-gradient(0deg, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.4) 100%);
+            border-top: 2px solid rgba(138, 43, 226, 0.6);
+            box-shadow: 0 -2px 20px rgba(138, 43, 226, 0.3);
+            z-index: 15;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: auto;
+            backdrop-filter: blur(10px);
+        }
+
+        .main-logo {
+            text-align: center;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .main-logo:hover {
+            transform: scale(1.1);
+            filter: brightness(1.2);
+        }
+
+        .voidsteel-icon-large {
+            width: 50px;
+            height: 50px;
+            position: relative;
+            filter: drop-shadow(0 0 15px rgba(138, 43, 226, 0.8));
+        }
+
+        .v-outer-large {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 25px solid transparent;
+            border-right: 25px solid transparent;
+            border-top: 45px solid #ffffff;
+            clip-path: polygon(0 0, 100% 0, 85% 85%, 15% 85%);
+        }
+
+        .v-inner-large {
+            position: absolute;
+            top: 6px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 18px solid transparent;
+            border-right: 18px solid transparent;
+            border-top: 32px solid #8a2be2;
+            clip-path: polygon(0 0, 100% 0, 80% 80%, 20% 80%);
+        }
+
+        .v-accent-large {
+            position: absolute;
+            top: 3px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-top: 15px solid #00ffff;
+        }
+
+        .logo-text-main {
+            font-size: 24px;
+            font-weight: 900;
+            letter-spacing: 6px;
+            color: #ffffff;
+            text-shadow: 0 0 15px rgba(138, 43, 226, 0.8);
+            animation: text-glow 3s ease-in-out infinite alternate;
+        }
+
+        /* --- SYSTEM CLOCK --- */
+        #system-clock {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #00ffff;
+            font-size: clamp(2.5rem, 6vw, 4rem);
+            font-weight: bold;
+            letter-spacing: 5px;
+            opacity: 0;
+            text-shadow: 
+                0 0 20px rgba(0, 255, 255, 0.8),
+                0 0 40px rgba(0, 255, 255, 0.5);
+            transition: opacity 0.5s ease-in-out;
+            z-index: 20;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px 40px;
+            border-radius: 10px;
+            border: 2px solid rgba(0, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
+        }
+        #system-clock.active { opacity: 1; }
+
+        /* --- CONSOLE --- */
+        #console-input-container {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 85%;
+            max-width: 900px;
+            background: rgba(0, 0, 0, 0.95);
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid rgba(138, 43, 226, 0.5);
+            box-shadow: 0 0 30px rgba(138, 43, 226, 0.3);
+            z-index: 25;
+            opacity: 0;
+            transition: all 0.3s ease;
+            pointer-events: auto;
+            backdrop-filter: blur(15px);
+        }
+        #console-input-container.active { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        #console-output {
+            margin-bottom: 15px;
+            color: #8a2be2;
+            font-size: 12px;
+            min-height: 100px;
+            max-height: 250px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            line-height: 1.5;
+            background: rgba(138, 43, 226, 0.05);
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid rgba(138, 43, 226, 0.2);
+        }
+
+        #console-input {
+            width: 100%;
+            background: transparent;
+            border: none;
+            color: #00ffff;
+            font-family: 'Consolas', monospace;
+            font-size: 14px;
+            outline: none;
+            caret-color: #8a2be2;
+            padding: 8px 0;
+        }
+
+        /* --- INTERACTIVE EFFECTS --- */
+        .energy-blast {
+            position: fixed;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(138, 43, 226, 0.8) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 8;
+            animation: energy-expand 1s ease-out forwards;
+        }
+
+        .ripple {
+            position: fixed;
+            border: 2px solid rgba(138, 43, 226, 0.6);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 7;
+            animation: ripple-expand 1.5s ease-out forwards;
+        }
+
+        .glitch-line {
+            position: fixed;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #ff0066, #8a2be2, #00ffff, transparent);
+            z-index: 9;
+            animation: glitch-sweep 0.3s ease-out forwards;
+        }
+
+        /* --- DATA CORRUPTION --- */
+        .data-corruption {
+            position: fixed;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 14;
+            font-size: 12px;
+            color: #ff0066;
+            opacity: 0.8;
+            animation: data-flicker 2s ease-in-out infinite;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 8px 20px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 0, 102, 0.3);
+            backdrop-filter: blur(5px);
+        }
+
+        /* --- KEYFRAMES --- */
+        @keyframes celestial-glow {
+            0%, 100% { 
+                box-shadow: 
+                    0 0 150px rgba(138, 43, 226, 0.8),
+                    0 0 300px rgba(138, 43, 226, 0.4),
+                    inset 0 0 60px rgba(0,0,0,0.9);
+            }
+            50% { 
+                box-shadow: 
+                    0 0 200px rgba(138, 43, 226, 1),
+                    0 0 400px rgba(138, 43, 226, 0.6),
+                    inset 0 0 80px rgba(0,0,0,0.95);
+            }
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.3); }
+        }
+
+        @keyframes text-glow {
+            0% { text-shadow: 0 0 10px rgba(138, 43, 226, 0.8); }
+            100% { text-shadow: 0 0 20px rgba(138, 43, 226, 1), 0 0 30px rgba(255, 0, 255, 0.6); }
+        }
+
+        @keyframes time-pulse {
+            0%, 100% { text-shadow: 0 0 8px rgba(0, 255, 255, 0.6); }
+            50% { text-shadow: 0 0 15px rgba(0, 255, 255, 1), 0 0 25px rgba(0, 255, 255, 0.8); }
+        }
+
+        @keyframes data-flicker {
+            0%, 85% { opacity: 0.8; }
+            90% { opacity: 0.3; }
+            95% { opacity: 1; }
+            100% { opacity: 0.8; }
+        }
+
+        @keyframes energy-expand {
+            0% { transform: scale(0); opacity: 1; }
+            100% { transform: scale(3); opacity: 0; }
+        }
+
+        @keyframes ripple-expand {
+            0% { transform: scale(0); opacity: 1; }
+            100% { transform: scale(4); opacity: 0; }
+        }
+
+        @keyframes glitch-sweep {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        @keyframes metric-shine {
+            0%, 100% { left: -100%; }
+            50% { left: 100%; }
+        }
+
+        /* --- RESPONSIVE --- */
+        @media (max-width: 1200px) {
+            .side-panel { width: 280px; }
+        }
+
+        @media (max-width: 900px) {
+            .side-panel { display: none; }
+            .top-bar, .bottom-bar { padding: 0 20px; }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="starfield-canvas"></canvas>
+    <canvas id="canvas"></canvas>
+
+    <div class="main-ui">
+        <div class="hud-corner top-left"></div>
+        <div class="hud-corner top-right"></div>
+        <div class="hud-corner bottom-left"></div>
+        <div class="hud-corner bottom-right"></div>
+
+        <div class="top-bar">
+            <div class="logo-top">
+                <div class="voidsteel-icon">
+                    <div class="v-outer"></div>
+                    <div class="v-inner"></div>
+                    <div class="v-accent"></div>
+                </div>
+                <div class="logo-text-small">VOIDSTEEL</div>
+            </div>
+            
+            <div class="system-info">
+                <div class="status-indicator" onclick="toggleStatus('core')">
+                    <div class="status-dot critical" id="core-status"></div>
+                    <span>CORE</span>
+                </div>
+                <div class="status-indicator" onclick="toggleStatus('quantum')">
+                    <div class="status-dot warning" id="quantum-status"></div>
+                    <span>QUANTUM</span>
+                </div>
+                <div class="status-indicator" onclick="toggleStatus('neural')">
+                    <div class="status-dot online" id="neural-status"></div>
+                    <span>NEURAL</span>
+                </div>
+                
+                <div class="datetime-display">
+                    <div class="system-time" id="system-time">00:00:00</div>
+                    <div class="system-date" id="system-date">Loading...</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="side-panel left">
+            <div class="panel-title" onclick="refreshMetrics()">System Metrics</div>
+            
+            <div class="system-metric" onclick="stressTest('cpu')">
+                <span class="metric-label">CPU Usage</span>
+                <div class="metric-bar">
+                    <div class="metric-fill" id="cpu-fill" style="width: 0%"></div>
+                </div>
+                <span class="metric-value" id="cpu-value">Loading...</span>
+            </div>
+            
+            <div class="system-metric" onclick="stressTest('memory')">
+                <span class="metric-label">Memory</span>
+                <div class="metric-bar">
+                    <div class="metric-fill" id="ram-fill" style="width: 0%"></div>
+                </div>
+                <span class="metric-value" id="ram-value">Loading...</span>
+            </div>
+            
+            <div class="system-metric" onclick="stressTest('storage')">
+                <span class="metric-label">Storage</span>
+                <div class="metric-bar">
+                    <div class="metric-fill" id="storage-fill" style="width: 0%"></div>
+                </div>
+                <span class="metric-value" id="storage-value">Loading...</span>
+            </div>
+            
+            <div class="system-metric" onclick="fluctuateVoid()">
+                <span class="metric-label">Void Flux</span>
+                <div class="metric-bar">
+                    <div class="metric-fill" id="void-fill" style="width: 23%"></div>
+                </div>
+                <span class="metric-value" id="void-value">23%</span>
+            </div>
+            
+            <div class="system-metric" onclick="toggleAnchor()">
+                <span class="metric-label">Reality Anchor</span>
+                <div class="metric-bar">
+                    <div class="metric-fill" id="anchor-fill" style="width: 12%; background: linear-gradient(90deg, #ff0066, #ff4444);"></div>
+                </div>
+                <span class="metric-value critical" id="anchor-value">FAILING</span>
+            </div>
+
+            <div class="system-metric" onclick="networkPulse()">
+                <span class="metric-label">Network</span>
+                <div class="metric-bar">
+                    <div class="metric-fill" id="network-fill" style="width: 0%"></div>
+                </div>
+                <span class="metric-value" id="network-value">0 MB/s</span>
+            </div>
+        </div>
+
+        <div class="side-panel right">
+            <div class="panel-title">:: VOIDSTEEL BROWSER ::</div>
+            <div class="browser-input-container">
+                <input type="text" id="browser-url-input" placeholder="> Enter URL (e.g. google.com or VOIDNET)" onkeydown="if(event.key==='Enter') loadBrowserFrame(this.value)">
+            </div>
+            <iframe id="voidsteel-browser" src="about:blank" class="voidsteel-browser-frame"></iframe>
+        </div>
+
+        <div class="void-core-container" onclick="voidCoreBlast()">
+            <div id="accretion-disk-container">
+                <div class="accretion-ring"></div>
+                <div class="accretion-ring"></div>
+                <div class="accretion-ring"></div>
+            </div>
+            <div id="celestial-body">
+                <div class="voidsteel-logo-center">
+                    <div class="v-outer-center"></div>
+                    <div class="v-inner-center"></div>
+                    <div class="v-accent-center"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="data-corruption" id="dataCorruption" onclick="corruptionEvent()">
+            // VOIDSTEEL_PROTOCOL: ACTIVE
+        </div>
+        <div id="system-clock" onclick="clockInteract()">00:00:00</div>
+
+        <div id="console-input-container">
+            <div id="console-output">
+                -- VOIDSTEEL COMMAND INTERFACE v4.0.0 -- 
+                System Status: OPERATIONAL | Void Core: ACTIVE | Reality Anchor: COMPROMISED
+                Type 'help' for available commands. Press '`' (tilde) to toggle the console. 
+                Click on elements for interactive features!
+            </div>
+            <input type="text" id="console-input" placeholder="> Awaiting command input..." autofocus>
+        </div>
+
+        <div class="bottom-bar">
+            <div class="main-logo" onclick="logoAnimation()">
+                <div class="voidsteel-icon-large">
+                    <div class="v-outer-large"></div>
+                    <div class="v-inner-large"></div>
+                    <div class="v-accent-large"></div>
+                </div>
+                <div class="logo-text-main">VOIDSTEEL</div>
+            </div>
+        </div>
+    </div>
+
+    <audio id="background-audio-source" src="placeholder.mp3" controls loop></audio>
+
+    <script>
+        // --- CANVAS SETUP ---
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            width = canvas.width;
+            height = canvas.height;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // --- ENHANCED PARTICLE SYSTEMS (VOID STREAM) ---
+        class VoidStream {
+            constructor() {
+                this.angle = Math.random() * Math.PI * 2;
+                this.distance = 200 + Math.random() * 150;
+                this.speed = 0.008 + Math.random() * 0.015;
+                this.opacity = 0.3 + Math.random() * 0.4;
+                this.width = 1 + Math.random() * 3;
+                this.centerX = width / 2;
+                this.centerY = height / 2;
+                this.color = Math.random() > 0.7 ? '#ff0066' : '#8a2be2';
+            }
+            update() {
+                this.angle += this.speed;
+                this.distance -= 0.3;
+                if (this.distance < 140) {
+                    this.distance = 200 + Math.random() * 150;
+                    this.angle = Math.random() * Math.PI * 2;
+                }
+            }
+            draw() {
+                const x = this.centerX + Math.cos(this.angle) * this.distance;
+                const y = this.centerY + Math.sin(this.angle) * this.distance;
+                ctx.globalAlpha = this.opacity * (this.distance / 350);
+                ctx.strokeStyle = this.color;
+                ctx.lineWidth = this.width;
+                ctx.shadowColor = this.color;
+                ctx.shadowBlur = 10;
+
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                const nextX = this.centerX + Math.cos(this.angle + 0.1) * (this.distance - 8);
+                const nextY = this.centerY + Math.sin(this.angle + 0.1) * (this.distance - 8);
+                ctx.lineTo(nextX, nextY);
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+            }
+        }
+
+        // --- ENHANCED PARTICLE SYSTEMS (VOID PARTICLE) ---
+        class VoidParticle {
+            constructor() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.size = Math.random() * 2 + 0.5;
+                this.vx = (Math.random() - 0.5) * 0.8;
+                this.vy = (Math.random() - 0.5) * 0.8;
+                this.opacity = Math.random() * 0.6 + 0.2;
+                this.color = Math.random() > 0.6 ? '#ff0066' : '#8a2be2';
+                this.pulse = Math.random() * Math.PI * 2;
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.pulse += 0.05;
+                this.opacity = 0.3 + Math.sin(this.pulse) * 0.3;
+
+                if (this.x < 0 || this.x > width) this.vx *= -1;
+                if (this.y < 0 || this.y > height) this.vy *= -1;
+            }
+            draw() {
+                ctx.globalAlpha = this.opacity;
+                ctx.fillStyle = this.color;
+                ctx.shadowColor = this.color;
+                ctx.shadowBlur = 5;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size + Math.sin(this.pulse) * 0.5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+        }
+
+        // --- ENERGY BOLT (for Core Blast) ---
+        class EnergyBolt {
+            constructor(startX, startY, endX, endY) {
+                this.startX = startX;
+                this.startY = startY;
+                this.endX = endX;
+                this.endY = endY;
+                this.progress = 0;
+                this.width = 2 + Math.random() * 3;
+                this.color = Math.random() > 0.5 ? '#00ffff' : '#ff0066';
+                this.life = 1;
+            }
+            update() {
+                this.progress += 0.1;
+                this.life -= 0.02;
+            }
+            draw() {
+                if (this.life <= 0) return;
+
+                const currentX = this.startX + (this.endX - this.startX) * this.progress;
+                const currentY = this.startY + (this.endY - this.startY) * this.progress;
+
+                ctx.globalAlpha = this.life;
+                ctx.strokeStyle = this.color;
+                ctx.lineWidth = this.width;
+                ctx.shadowColor = this.color;
+                ctx.shadowBlur = 15;
+
+                ctx.beginPath();
+                ctx.moveTo(this.startX, this.startY);
+                ctx.lineTo(currentX, currentY);
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+            }
+        }
+
+        // --- INITIALIZE EFFECTS ---
+        const voidStreams = [];
+        const voidParticles = [];
+        const energyBolts = [];
+
+        for (let i = 0; i < 12; i++) {
+            voidStreams.push(new VoidStream());
+        }
+        for (let i = 0; i < 35; i++) {
+            voidParticles.push(new VoidParticle());
+        }
+
+        // --- ANIMATION LOOP ---
+        function animate() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.08)';
+            ctx.fillRect(0, 0, width, height);
+
+            // Update and draw void streams
+            voidStreams.forEach(stream => {
+                stream.update();
+                stream.draw();
+            });
+
+            // Update and draw void particles
+            voidParticles.forEach(particle => {
+                particle.update();
+                particle.draw();
+            });
+
+            // Update and draw energy bolts
+            energyBolts.forEach((bolt, index) => {
+                bolt.update();
+                bolt.draw();
+                if (bolt.life <= 0) {
+                    energyBolts.splice(index, 1);
+                }
+            });
+
+            ctx.globalAlpha = 1;
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+        // --- STARFIELD ---
+        const starfieldCanvas = document.getElementById('starfield-canvas');
+        const starfieldCtx = starfieldCanvas.getContext('2d');
+        let stars = [];
+        const numStars = 400;
+
+        function initStarfield() {
+            starfieldCanvas.width = window.innerWidth;
+            starfieldCanvas.height = window.innerHeight;
+            stars = [];
+            for (let i = 0; i < numStars; i++) {
+                stars.push({
+                    x: Math.random() * starfieldCanvas.width,
+                    y: Math.random() * starfieldCanvas.height,
+                    size: Math.random() * 2 + 0.1,
+                    opacity: Math.random(),
+                    speed: Math.random() * 0.05 + 0.01,
+                    color: Math.random() > 0.8 ? '#00ffff' : '#ffffff'
+                });
+            }
+        }
+
+        function drawStarfield() {
+            starfieldCtx.clearRect(0, 0, starfieldCanvas.width, starfieldCanvas.height);
+            stars.forEach(star => {
+                star.opacity = Math.abs(Math.sin(Date.now() * star.speed));
+                starfieldCtx.fillStyle = star.color;
+                starfieldCtx.globalAlpha = star.opacity * 0.6;
+                starfieldCtx.fillRect(star.x, star.y, star.size, star.size);
+            });
+            requestAnimationFrame(drawStarfield);
+        }
+
+        initStarfield();
+        window.addEventListener('resize', initStarfield);
+        drawStarfield();
+
+        // --- INTERACTIVITY FUNCTIONS ---
+        function createEnergyBlast(x, y) {
+            const blast = document.createElement('div');
+            blast.className = 'energy-blast';
+            blast.style.left = `${x - 50}px`; // Center the blast element
+            blast.style.top = `${y - 50}px`;
+            document.body.appendChild(blast);
+            setTimeout(() => blast.remove(), 1000);
+
+            // Create glitch line effect
+            const glitchLine = document.createElement('div');
+            glitchLine.className = 'glitch-line';
+            glitchLine.style.top = `${y}px`;
+            document.body.appendChild(glitchLine);
+            setTimeout(() => glitchLine.remove(), 500);
+
+            // Spawn Energy Bolts from the center
+            const centerX = width / 2;
+            const centerY = height / 2;
+            for (let i = 0; i < 5; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const endX = centerX + Math.cos(angle) * 1000;
+                const endY = centerY + Math.sin(angle) * 1000;
+                energyBolts.push(new EnergyBolt(centerX, centerY, endX, endY));
+            }
+        }
+
+        // Global click listener for general interaction
+        document.body.addEventListener('click', (e) => {
+            // Check if the click was within an interactive element (to prevent double effects)
+            if (e.target.closest('.top-bar, .side-panel, .void-core-container, #console-input-container, .bottom-bar')) {
+                return;
+            }
+            
+            const ripple = document.createElement('div');
+            ripple.className = 'ripple';
+            ripple.style.left = `${e.clientX}px`;
+            ripple.style.top = `${e.clientY}px`;
+            document.body.appendChild(ripple);
+            setTimeout(() => ripple.remove(), 1500);
+
+            // Trigger a random small glitch
+            if (Math.random() < 0.2) {
+                createEnergyBlast(e.clientX, e.clientY);
+            }
+        });
+
+        // Specific Core Blast effect
+        function voidCoreBlast() {
+            createEnergyBlast(width / 2, height / 2);
+            addToLog(":: CORE :: <span style='color: #ff0066;'>ENERGY SURGE DETECTED.</span>");
+            
+            // Randomly trigger a temporary status change
+            if (Math.random() > 0.5) {
+                toggleStatus('core', 'critical');
+                setTimeout(() => toggleStatus('core', 'online'), 5000);
+            }
+        }
+
+        // --- STATUS & METRIC UPDATES ---
+        const statusMap = { 'online': '#00ff41', 'warning': '#ffaa00', 'critical': '#ff0066' };
+
+        function toggleStatus(id, newStatus = null) {
+            const dot = document.getElementById(`${id}-status`);
+            
+            if (newStatus) {
+                dot.className = `status-dot ${newStatus}`;
+                dot.style.background = statusMap[newStatus];
+            } else {
+                // Cycle status if no specific status is given
+                const current = dot.className.split(' ').pop();
+                let next = 'online';
+                if (current === 'online') next = 'warning';
+                else if (current === 'warning') next = 'critical';
+
+                dot.className = `status-dot ${next}`;
+                dot.style.background = statusMap[next];
+            }
+            addToLog(`:: STATUS :: ${id.toUpperCase()} status set to <span style='color: ${dot.style.background};'>${dot.className.split(' ').pop().toUpperCase()}</span>.`);
+        }
+
+        function updateSystemMetrics() {
+            const cpu = Math.floor(Math.random() * 100);
+            const ram = Math.floor(Math.random() * 100);
+            const storage = Math.floor(Math.random() * 100);
+            const network = (Math.random() * 10 + 0.1).toFixed(2);
+            
+            updateMetric('cpu', cpu, `${cpu}%`, 70, 90);
+            updateMetric('ram', ram, `${ram}%`, 80, 95);
+            updateMetric('storage', storage, `${storage}%`, 90, 98);
+            updateMetric('network', network * 10, `${network} MB/s`, 8, 9);
+        }
+
+        function updateMetric(id, value, display, warnThreshold, criticalThreshold) {
+            const fill = document.getElementById(`${id}-fill`);
+            const valEl = document.getElementById(`${id}-value`);
+            
+            fill.style.width = `${value}%`;
+            valEl.textContent = display;
+
+            // Apply color classes based on threshold for visual feedback
+            valEl.className = 'metric-value';
+            if (id === 'network') {
+                if (value > criticalThreshold) valEl.classList.add('critical');
+                else if (value > warnThreshold) valEl.classList.add('warning');
+                else valEl.classList.add('good');
+            } else {
+                if (value > criticalThreshold) valEl.classList.add('critical');
+                else if (value > warnThreshold) valEl.classList.add('warning');
+            }
+        }
+
+        function refreshMetrics() {
+            addToLog(":: METRICS :: Refreshing system metrics.");
+            updateSystemMetrics();
+        }
+
+        function stressTest(metric) {
+            const targetValue = Math.min(100, Math.floor(Math.random() * 20) + 90);
+            const display = metric === 'network' ? `${(targetValue/10).toFixed(2)} MB/s` : `${targetValue}%`;
+            
+            updateMetric(metric, targetValue, display, 70, 90);
+            addToLog(`:: COMMAND :: Initiating ${metric.toUpperCase()} STRESS TEST: <span style='color: #ffaa00;'>${display}</span> spike simulated.`);
+        }
+
+        function fluctuateVoid() {
+            const voidValue = Math.floor(Math.random() * 100);
+            const fill = document.getElementById('void-fill');
+            const valEl = document.getElementById('void-value');
+            
+            fill.style.width = `${voidValue}%`;
+            valEl.textContent = `${voidValue}%`;
+
+            valEl.className = 'metric-value';
+            if (voidValue < 20 || voidValue > 80) valEl.classList.add('critical');
+            else if (voidValue < 35 || voidValue > 65) valEl.classList.add('warning');
+            else valEl.classList.add('good');
+
+            addToLog(`:: VOID FLUX :: Fluctuation detected. Current Level: <span style='color: ${valEl.style.color};'>${voidValue}%</span>`);
+        }
+
+        function toggleAnchor() {
+            const fill = document.getElementById('anchor-fill');
+            const valEl = document.getElementById('anchor-value');
+            
+            if (valEl.textContent === 'FAILING') {
+                fill.style.width = '95%';
+                fill.style.background = 'linear-gradient(90deg, #00ff41, #00ffaa)';
+                valEl.textContent = 'STABLE';
+                valEl.classList.remove('critical');
+                valEl.classList.add('good');
+                addToLog(":: ANCHOR :: <span style='color: #00ff41;'>REALITY ANCHOR STABILIZED.</span> Protocol A-7 initiated.");
+            } else {
+                fill.style.width = '12%';
+                fill.style.background = 'linear-gradient(90deg, #ff0066, #ff4444)';
+                valEl.textContent = 'FAILING';
+                valEl.classList.remove('good');
+                valEl.classList.add('critical');
+                addToLog(":: WARNING :: <span style='color: #ff0066;'>REALITY ANCHOR COMPROMISED.</span> Immediate intervention required.");
+            }
+        }
+
+        function networkPulse() {
+            const networkValue = 10 + Math.random() * 50;
+            updateMetric('network', networkValue, `${networkValue.toFixed(2)} MB/s`, 30, 60);
+            addToLog(`:: NETWORK :: High-bandwidth pulse detected: <span style='color: #00ffff;'>${networkValue.toFixed(2)} MB/s</span>.`);
+        }
+
+        // --- NEW INTERNAL VOIDNET PAGE ---
+        function loadVoidNetInternalPage() {
+            const iframe = document.getElementById('voidsteel-browser');
+            const internalHTML = `
+                <!DOCTYPE html>
+                <html lang="en">
+                <body style="background-color: #000; color: #00ff41; font-family: Consolas, monospace; padding: 20px; margin: 0; border: 1px dashed #00ff41;">
+                    <h2 style="color: #8a2be2;">:: VOIDNET INTRANET ::</h2>
+                    <p>STATUS: <span style="color: #00ff41;">SECURE CONNECTION ESTABLISHED.</span></p>
+                    <p>CURRENT SYSTEM MESSAGE: Sector Gamma-7 anomaly detected. Recommend immediate Reality Anchor stabilization.</p>
+                    <hr style="border-color: #8a2be2;">
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="margin-bottom: 10px;">[ > Void Protocol Docs ]</li>
+                        <li style="margin-bottom: 10px;">[ > Anomaly Log (Local) ]</li>
+                        <li style="margin-bottom: 10px;">[ > Quantum Core Diagnostics ]</li>
+                    </ul>
+                    <p style="font-size: 10px; margin-top: 20px;">VOIDSTEEL Internal Browser v4.0.1</p>
+                </body>
+                </html>
+            `;
+            iframe.srcdoc = internalHTML; // Use srcdoc to inject local HTML content
+            addToLog(":: VOIDNET :: <span style='color: #00ff41;'>Internal VOIDNET page loaded successfully.</span>");
+        }
+
+        // --- BROWSER FUNCTIONALITY (UPDATED) ---
+        function loadBrowserFrame(url) {
+            const iframe = document.getElementById('voidsteel-browser');
+            
+            if (!url) {
+                iframe.src = 'about:blank';
+                addToLog(":: BROWSER :: Input empty. Loading 'about:blank'.");
+                return;
+            }
+
+            let finalUrl = url.trim();
+
+            // Check for VOIDNET internal protocol
+            if (finalUrl.toUpperCase() === 'VOIDNET' || finalUrl.toUpperCase() === 'VOIDNET.COM') {
+                loadVoidNetInternalPage();
+                return;
+            }
+            
+            // Default to HTTPS if no protocol is specified
+            if (!/^https?:\/\//i.test(finalUrl)) {
+                finalUrl = `https://${finalUrl}`;
+            }
+
+            // Attempt to load the external URL
+            iframe.src = finalUrl;
+            addToLog(`:: BROWSER :: Attempting connection to: <span style='color: #00ffff;'>${finalUrl}</span>`);
+            addToLog(":: BROWSER :: NOTE: If loading fails, ensure you are running the page via a local server (e.g., Python's http.server) and not directly from a 'file://' path.");
+        }
+        
+        // --- VISUAL & ANIMATION FUNCTIONS ---
+        function logoAnimation() {
+            addToLog(":: VOIDSTEEL :: Main logo system ping acknowledged.");
+            // No functional change, just the CSS hover animation
+        }
+
+        function corruptionEvent() {
+             addToLog(":: DATA :: <span style='color: #ff0066;'>CORRUPTION EVENT TRIGGERED.</span> Initiating cascade fix...");
+             const systems = ['core', 'quantum', 'neural'];
+             systems.forEach(id => {
+                 if (Math.random() < 0.6) {
+                     toggleStatus(id, 'critical');
+                 }
+             });
+             // Fix most of the corruption after a delay
+             setTimeout(() => {
+                 systems.forEach(id => {
+                      toggleStatus(id, 'online');
+                 });
+                 toggleAnchor();
+                 addToLog(":: DATA :: Cascade fix complete. Status indicators restored.");
+             }, 3500);
+        }
+
+        function clockInteract() {
+            const clock = document.getElementById('system-clock');
+            clock.classList.toggle('active');
+        }
+
+        // --- DATE TIME SYSTEM ---
+        function updateDateTime() {
+            const now = new Date();
+            
+            // Time
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            const timeString = `${hours}:${minutes}:${seconds}`;
+            
+            // Date
+            const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+            const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+            
+            const dayName = days[now.getDay()];
+            const monthName = months[now.getMonth()];
+            const date = now.getDate();
+            const year = now.getFullYear();
+            
+            const dateString = `${dayName} ${monthName} ${date}, ${year}`;
+            
+            // Update displays
+            document.getElementById('system-time').textContent = timeString;
+            document.getElementById('system-date').textContent = dateString;
+            document.getElementById('system-clock').textContent = timeString;
+        }
+
+        // --- CONSOLE SYSTEM ---
+        const consoleInputContainer = document.getElementById('console-input-container');
+        const consoleInput = document.getElementById('console-input');
+        const consoleOutput = document.getElementById('console-output');
+
+        // Clock toggle
+        let isClockActive = false; 
+
+        // Console toggle
+        let isConsoleOpen = false;
+        
+        // Command history
+        let commandHistory = [];
+        let historyIndex = -1;
+
+        function toggleConsole(forceOpen = null) {
+            if (forceOpen === true) {
+                isConsoleOpen = true;
+            } else if (forceOpen === false) {
+                isConsoleOpen = false;
+            } else {
+                isConsoleOpen = !isConsoleOpen;
+            }
+
+            consoleInputContainer.classList.toggle('active', isConsoleOpen);
+            document.getElementById('system-clock').classList.toggle('active', isConsoleOpen);
+
+            if (isConsoleOpen) {
+                consoleInput.focus();
+                // When console opens, show the clock overlay only if it wasn't already active
+                if (!isClockActive) {
+                    document.getElementById('system-clock').classList.add('active');
+                }
+            } else {
+                 // When console closes, hide clock overlay
+                document.getElementById('system-clock').classList.remove('active');
+            }
+        }
+
+        function addToLog(message) {
+            consoleOutput.innerHTML += `
+<span style='color: #00ffff;'>[${document.getElementById('system-time').textContent}]</span> ${message}<br>`;
+            // Scroll to the bottom of the console output
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
+
+        function processCommand(command) {
+            command = command.trim().toUpperCase();
+            
+            if (command === 'HELP') {
+                addToLog(":: COMMANDS :: Available commands:");
+                addToLog("   - <span style='color: #00ffff;'>HELP</span>: Display available commands.");
+                addToLog("   - <span style='color: #00ffff;'>CLEAR</span>: Clear the console output.");
+                addToLog("   - <span style='color: #00ffff;'>STATUS</span>: Check current system statuses.");
+                addToLog("   - <span style='color: #00ffff;'>BROWSE [url]</span>: Load URL in the VoidSteel Browser (e.g., BROWSE VOIDNET).");
+                addToLog("   - <span style='color: #00ffff;'>REBOOT</span>: Initiate system reboot sequence (simulated).");
+            } else if (command === 'CLEAR') {
+                consoleOutput.textContent = '';
+            } else if (command === 'STATUS') {
+                 addToLog(":: STATUS :: Pinging core systems...");
+                 const coreStatus = document.getElementById('core-status').className.split(' ').pop().toUpperCase();
+                 const anchorStatus = document.getElementById('anchor-value').textContent;
+                 addToLog(`   - Core: <span style='color: ${coreStatus === 'CRITICAL' ? '#ff0066' : '#00ff41'};'>${coreStatus}</span>`);
+                 addToLog(`   - Anchor: <span style='color: ${anchorStatus === 'FAILING' ? '#ff0066' : '#00ff41'};'>${anchorStatus}</span>`);
+                 addToLog(`   - CPU: ${document.getElementById('cpu-value').textContent} | RAM: ${document.getElementById('ram-value').textContent}`);
+            } else if (command.startsWith('BROWSE')) {
+                const parts = command.split(' ');
+                if (parts.length < 2) {
+                    addToLog(":: COMMAND :: <span style='color: #ffaa00;'>Usage:</span> BROWSE [url]. Try 'BROWSE VOIDNET'.");
+                } else {
+                    const url = parts.slice(1).join(' ');
+                    loadBrowserFrame(url);
+                }
+            } else if (command === 'REBOOT') {
+                addToLog(":: WARNING :: Initiating full system reboot in 3...");
+                setTimeout(() => addToLog(":: WARNING :: Reboot in 2..."), 1000);
+                setTimeout(() => addToLog(":: WARNING :: Reboot in 1..."), 2000);
+                setTimeout(() => {
+                    addToLog(":: SYSTEM :: <span style='color: #00ff41;'>REBOOT COMPLETE.</span> All systems nominal.");
+                    window.location.reload(); // Simple reboot simulation
+                }, 3000);
+            } else {
+                addToLog(`:: COMMAND :: <span style='color: #ff0066;'>ERROR:</span> Command '${command}' not recognized. Type 'help'.`);
+            }
+        }
+
+        // Event listeners for console input
+        consoleInput.addEventListener('keydown', (e) => {
+            if (e.key === '`' || e.key === '~') {
+                e.preventDefault(); // Prevent '`' from appearing in the input
+                toggleConsole();
+                return;
+            }
+
+            if (!isConsoleOpen) return;
+
+            if (e.key === 'Enter') {
+                const command = consoleInput.value;
+                if (command.trim() !== "") {
+                    // Add command to log and history
+                    addToLog(`> ${command}`);
+                    commandHistory.unshift(command); // Add to the start
+                    historyIndex = -1; // Reset index
+                    processCommand(command);
+                    consoleInput.value = '';
+                }
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (commandHistory.length > 0) {
+                    historyIndex = (historyIndex < commandHistory.length - 1) ? historyIndex + 1 : commandHistory.length - 1;
+                    consoleInput.value = commandHistory[historyIndex];
+                }
+            } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (commandHistory.length > 0) {
+                    historyIndex = (historyIndex > 0) ? historyIndex - 1 : -1;
+                    consoleInput.value = (historyIndex === -1) ? '' : commandHistory[historyIndex];
+                }
+            }
+        });
+        
+        // Global event listener for console toggle
+        document.addEventListener('keydown', (e) => {
+            if (e.key === '`' || e.key === '~') {
+                 // Only toggle if the key is pressed and no text field is focused
+                if (document.activeElement !== consoleInput && document.activeElement !== document.getElementById('browser-url-input')) {
+                     e.preventDefault();
+                     toggleConsole();
+                }
+            }
+        });
+
+
+        // --- GAME LOOP / INITIALIZATION ---
+        function updateDataCorruption() {
+            const dataCorruption = document.getElementById('dataCorruption');
+            const corruptedText = [
+                '// VOIDSTEEL_PROTOCOL: ACTIVE',
+                '// SYSTEM_INTEGRITY: 23%',
+                '// QUANTUM_FLUX: UNSTABLE',
+                '// REALITY_ANCHOR: FAILING',
+                '// NEURAL_LINK: COMPROMISED'
+            ];
+            dataCorruption.textContent = corruptedText[Math.floor(Math.random() * corruptedText.length)];
+        }
+
+        function startUpdateLoops() {
+            setInterval(updateDateTime, 1000); 
+            setInterval(updateSystemMetrics, 2000); 
+            setInterval(updateDataCorruption, 3000); 
+            
+            updateDateTime();
+            updateSystemMetrics();
+            updateDataCorruption();
+
+            // --- DEFAULT ACTION: Load Google and open the console ---
+            toggleConsole(true); // Open console
+            loadBrowserFrame('google.com'); // Load Google (works if run from a server!)
+            // --------------------------------------------------------
+        }
+
+        startUpdateLoops();
+    </script>
+</body>
+</html>
